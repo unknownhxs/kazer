@@ -1,0 +1,3 @@
+Line 1: Try editing this
+Line 2: Add new lines with Enter
+Line 3: Navigate with arrows
