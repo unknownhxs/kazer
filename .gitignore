@@ -1,0 +1,4 @@
+# Ignore specific files
+readme.md.bak
+data.json
+test_edit

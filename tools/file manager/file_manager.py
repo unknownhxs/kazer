@@ -5,6 +5,7 @@ A menu-driven file manager for console/terminal use.
 """
 
 import os
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -15,6 +16,14 @@ try:
     HAS_PYFIGLET = True
 except ImportError:
     HAS_PYFIGLET = False
+
+try:
+    from rich.console import Console
+    from rich.markdown import Markdown
+    from rich.panel import Panel
+    HAS_RICH = True
+except ImportError:
+    HAS_RICH = False
 
 try:
     import msvcrt
@@ -154,7 +163,7 @@ class FileManager:
                 termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         else:
             # Fallback to input() if no key detection available
-            return input("Press Enter to continue...")
+            return input(f"{self.get_text('press_enter_continue')}...")
         
     def display_logo(self):
         """Display KASER logo using pyfiglet if available"""
@@ -177,7 +186,7 @@ class FileManager:
         print(f"📂 {self.get_text('current_directory')}: {self.current_dir}")
         if self.filter_active:
             filter_display = self.get_filter_display_name()
-            print(f"🔍 Filter active: {filter_display}")
+            print(f"🔍 {self.get_text('filter_active')}: {filter_display}")
         print("─" * 60)
         
     def list_directory(self):
@@ -185,7 +194,7 @@ class FileManager:
         try:
             items = list(self.current_dir.iterdir())
             if not items:
-                print("📭 Directory is empty.")
+                print(f"📭 {self.get_text('directory_is_empty')}")
                 return
                 
             # Sort directories first, then files
@@ -211,7 +220,7 @@ class FileManager:
                     modified = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
                     print(f"📁 {directory.name:<40} {'[DIR]':<10} {'':<15} {modified}")
                 except PermissionError:
-                    print(f"📁 {directory.name:<40} {'[DIR]':<10} {'':<15} {'🚫 Access Denied'}")
+                    print(f"📁 {directory.name:<40} {'[DIR]':<10} {'':<15} {'🚫 ' + self.get_text('access_denied')}")
             
             # Display files
             for file in files:
@@ -222,10 +231,10 @@ class FileManager:
                     file_emoji = self.get_file_emoji(file.suffix)
                     print(f"{file_emoji} {file.name:<39} {'[FILE]':<10} {size:<15} {modified}")
                 except PermissionError:
-                    print(f"📄 {file.name:<39} {'[FILE]':<10} {'🚫 Access Denied':<15} {'🚫 Access Denied'}")
+                    print(f"📄 {file.name:<39} {'[FILE]':<10} {'🚫 ' + self.get_text('access_denied'):<15} {'🚫 ' + self.get_text('access_denied')}")
                     
         except PermissionError:
-            print("🚫 Permission denied to access this directory.")
+            print(f"🚫 {self.get_text('permission_denied')}")
             
     def get_file_emoji(self, suffix):
         """Get appropriate emoji for file type based on extension"""
@@ -255,77 +264,36 @@ class FileManager:
         return f"{size_bytes:.1f} {size_names[i]}"
         
     def load_translations(self):
-        """Load translation strings for all supported languages"""
+        """Load translation strings from external JSON file"""
+        import json
+        try:
+            with open('file manager/translations.json', 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            print("⚠️ Translation file not found, using fallback translations")
+            return self.get_fallback_translations()
+        except Exception as e:
+            print(f"⚠️ Error loading translations: {e}")
+            return self.get_fallback_translations()
+    
+    def get_fallback_translations(self):
+        """Fallback translations if JSON file is not available"""
         return {
             "en": {
                 "main_menu": "MAIN MENU",
                 "navigation": "Navigation",
-                "settings": "Settings", 
+                "settings": "Settings",
                 "exit": "Exit",
                 "current_directory": "Current Directory",
-                "settings_menu": "Settings Menu",
-                "change_language": "Change Language",
-                "display_preferences": "Display Preferences",
-                "view_current_settings": "View Current Settings",
-                "reset_to_defaults": "Reset to Defaults",
-                "back_to_main_menu": "Back to Main Menu",
-                "available_languages": "Available Languages",
-                "cancel": "Cancel",
-                "language_changed": "Language changed to",
-                "language_change_cancelled": "Language change cancelled",
-                "invalid_choice": "Invalid choice",
+                "back_to_main_menu": "Back to main menu",
+                "choose_option": "Choose an option",
                 "press_enter_continue": "Press Enter to continue",
-                "display_preferences_title": "Display Preferences",
-                "show_hidden_files": "Show Hidden Files",
-                "sort_order": "Sort Order",
-                "back_to_settings": "Back to Settings",
-                "current_setting": "Current setting",
-                "toggle": "Toggle?",
-                "sort_options": "Sort Options",
-                "by_name": "By Name (alphabetical)",
-                "by_size": "By Size",
-                "by_date": "By Date Modified",
-                "by_type": "By Type",
-                "sort_order_set": "Sort order set to",
-                "current_settings": "Current Settings",
-                "language": "Language",
-                "theme": "Theme",
-                "reset_confirm": "Are you sure you want to reset all settings to defaults?",
-                "settings_reset": "Settings reset to defaults successfully",
-                "settings_reset_cancelled": "Settings reset cancelled",
-                "yes": "Yes",
-                "no": "No",
-                "filter_menu": "Filter Menu",
-                "filter_options": "Filter Options",
-                "show_files_only": "Show Files Only",
-                "show_folders_only": "Show Folders Only",
-                "show_text_files": "Show Text Files",
-                "show_images": "Show Images",
-                "show_archives": "Show Archives",
-                "show_executables": "Show Executables",
-                "custom_filter": "Custom Filter",
-                "clear_filter": "Clear Filter",
-                "back_to_navigation": "Back to Navigation",
-                "enter_custom_pattern": "Enter custom filter pattern",
-                "filter_applied": "Filter applied",
-                "filter_cleared": "Filter cleared",
-                "edit_mode": "Edit Mode",
-                "view_mode": "View Mode",
-                "save_changes": "Save Changes",
-                "discard_changes": "Discard Changes",
-                "enter_new_content": "Enter new content for line",
-                "changes_saved": "Changes saved successfully",
-                "changes_discarded": "Changes discarded",
-                "confirm_save": "Save changes to file?",
-                "confirm_discard": "Discard all changes?",
-                "file_modified": "File has been modified",
-                "editing_line": "Editing line",
-                "press_escape_to_finish": "Press ESC to finish editing",
-                "insert_mode": "INSERT",
-                "overwrite_mode": "OVERWRITE",
-                "new_line": "New Line",
-                "line_break": "Line Break",
-                "delete_line": "Delete Line"
+                "controls_navigate": "↑↓ Navigate",
+                "controls_select": "Enter Select",
+                "controls_back": "ESC Back",
+                "directory_is_empty": "Directory is empty",
+                "permission_denied": "Permission denied to access this directory",
+                "access_denied": "Access Denied"
             },
             "fr": {
                 "main_menu": "MENU PRINCIPAL",
@@ -333,284 +301,19 @@ class FileManager:
                 "settings": "Paramètres",
                 "exit": "Quitter",
                 "current_directory": "Répertoire Actuel",
-                "settings_menu": "Menu des Paramètres",
-                "change_language": "Changer de Langue",
-                "display_preferences": "Préférences d'Affichage",
-                "view_current_settings": "Voir les Paramètres Actuels",
-                "reset_to_defaults": "Réinitialiser aux Valeurs par Défaut",
-                "back_to_main_menu": "Retour au Menu Principal",
-                "available_languages": "Langues Disponibles",
-                "cancel": "Annuler",
-                "language_changed": "Langue changée vers",
-                "language_change_cancelled": "Changement de langue annulé",
-                "invalid_choice": "Choix invalide",
+                "back_to_main_menu": "Retour",
+                "choose_option": "Choisir une option",
                 "press_enter_continue": "Appuyez sur Entrée pour continuer",
-                "display_preferences_title": "Préférences d'Affichage",
-                "show_hidden_files": "Afficher les Fichiers Cachés",
-                "sort_order": "Ordre de Tri",
-                "back_to_settings": "Retour aux Paramètres",
-                "current_setting": "Paramètre actuel",
-                "toggle": "Basculer?",
-                "sort_options": "Options de Tri",
-                "by_name": "Par Nom (alphabétique)",
-                "by_size": "Par Taille",
-                "by_date": "Par Date de Modification",
-                "by_type": "Par Type",
-                "sort_order_set": "Ordre de tri défini sur",
-                "current_settings": "Paramètres Actuels",
-                "language": "Langue",
-                "theme": "Thème",
-                "reset_confirm": "Êtes-vous sûr de vouloir réinitialiser tous les paramètres aux valeurs par défaut?",
-                "settings_reset": "Paramètres réinitialisés aux valeurs par défaut avec succès",
-                "settings_reset_cancelled": "Réinitialisation des paramètres annulée",
-                "yes": "Oui",
-                "no": "Non",
-                "filter_menu": "Menu de Filtres",
-                "filter_options": "Options de Filtres",
-                "show_files_only": "Afficher Seulement les Fichiers",
-                "show_folders_only": "Afficher Seulement les Dossiers",
-                "show_text_files": "Afficher les Fichiers Texte",
-                "show_images": "Afficher les Images",
-                "show_archives": "Afficher les Archives",
-                "show_executables": "Afficher les Exécutables",
-                "custom_filter": "Filtre Personnalisé",
-                "clear_filter": "Effacer le Filtre",
-                "back_to_navigation": "Retour à la Navigation",
-                "enter_custom_pattern": "Entrez un motif de filtre personnalisé",
-                "filter_applied": "Filtre appliqué",
-                "filter_cleared": "Filtre effacé",
-                "edit_mode": "Mode Édition",
-                "view_mode": "Mode Visualisation",
-                "save_changes": "Sauvegarder les Modifications",
-                "discard_changes": "Annuler les Modifications",
-                "enter_new_content": "Entrez le nouveau contenu pour la ligne",
-                "changes_saved": "Modifications sauvegardées avec succès",
-                "changes_discarded": "Modifications annulées",
-                "confirm_save": "Sauvegarder les modifications dans le fichier?",
-                "confirm_discard": "Annuler toutes les modifications?",
-                "file_modified": "Le fichier a été modifié",
-                "editing_line": "Édition de la ligne",
-                "press_escape_to_finish": "Appuyez sur ESC pour terminer l'édition",
-                "insert_mode": "INSERTION",
-                "overwrite_mode": "ÉCRASEMENT",
-                "new_line": "Nouvelle Ligne",
-                "line_break": "Saut de Ligne",
-                "delete_line": "Supprimer la Ligne"
-            },
-            "es": {
-                "main_menu": "MENÚ PRINCIPAL",
-                "navigation": "Navegación",
-                "settings": "Configuración",
-                "exit": "Salir",
-                "current_directory": "Directorio Actual",
-                "settings_menu": "Menú de Configuración",
-                "change_language": "Cambiar Idioma",
-                "display_preferences": "Preferencias de Visualización",
-                "view_current_settings": "Ver Configuración Actual",
-                "reset_to_defaults": "Restablecer a Valores por Defecto",
-                "back_to_main_menu": "Volver al Menú Principal",
-                "available_languages": "Idiomas Disponibles",
-                "cancel": "Cancelar",
-                "language_changed": "Idioma cambiado a",
-                "language_change_cancelled": "Cambio de idioma cancelado",
-                "invalid_choice": "Opción inválida",
-                "press_enter_continue": "Presiona Enter para continuar",
-                "display_preferences_title": "Preferencias de Visualización",
-                "show_hidden_files": "Mostrar Archivos Ocultos",
-                "sort_order": "Orden de Clasificación",
-                "back_to_settings": "Volver a Configuración",
-                "current_setting": "Configuración actual",
-                "toggle": "¿Alternar?",
-                "sort_options": "Opciones de Clasificación",
-                "by_name": "Por Nombre (alfabético)",
-                "by_size": "Por Tamaño",
-                "by_date": "Por Fecha de Modificación",
-                "by_type": "Por Tipo",
-                "sort_order_set": "Orden de clasificación establecido en",
-                "current_settings": "Configuración Actual",
-                "language": "Idioma",
-                "theme": "Tema",
-                "reset_confirm": "¿Estás seguro de que quieres restablecer toda la configuración a los valores por defecto?",
-                "settings_reset": "Configuración restablecida a valores por defecto exitosamente",
-                "settings_reset_cancelled": "Restablecimiento de configuración cancelado",
-                "yes": "Sí",
-                "no": "No",
-                "filter_menu": "Menú de Filtros",
-                "filter_options": "Opciones de Filtros",
-                "show_files_only": "Mostrar Solo Archivos",
-                "show_folders_only": "Mostrar Solo Carpetas",
-                "show_text_files": "Mostrar Archivos de Texto",
-                "show_images": "Mostrar Imágenes",
-                "show_archives": "Mostrar Archivos",
-                "show_executables": "Mostrar Ejecutables",
-                "custom_filter": "Filtro Personalizado",
-                "clear_filter": "Limpiar Filtro",
-                "back_to_navigation": "Volver a Navegación",
-                "enter_custom_pattern": "Ingrese patrón de filtro personalizado",
-                "filter_applied": "Filtro aplicado",
-                "filter_cleared": "Filtro limpiado"
-            },
-            "de": {
-                "main_menu": "HAUPTMENÜ",
-                "navigation": "Navigation",
-                "settings": "Einstellungen",
-                "exit": "Beenden",
-                "current_directory": "Aktuelles Verzeichnis",
-                "settings_menu": "Einstellungsmenü",
-                "change_language": "Sprache Ändern",
-                "display_preferences": "Anzeigeeinstellungen",
-                "view_current_settings": "Aktuelle Einstellungen Anzeigen",
-                "reset_to_defaults": "Auf Standardwerte Zurücksetzen",
-                "back_to_main_menu": "Zurück zum Hauptmenü",
-                "available_languages": "Verfügbare Sprachen",
-                "cancel": "Abbrechen",
-                "language_changed": "Sprache geändert zu",
-                "language_change_cancelled": "Sprachänderung abgebrochen",
-                "invalid_choice": "Ungültige Auswahl",
-                "press_enter_continue": "Enter drücken um fortzufahren",
-                "display_preferences_title": "Anzeigeeinstellungen",
-                "show_hidden_files": "Versteckte Dateien Anzeigen",
-                "sort_order": "Sortierreihenfolge",
-                "back_to_settings": "Zurück zu Einstellungen",
-                "current_setting": "Aktuelle Einstellung",
-                "toggle": "Umschalten?",
-                "sort_options": "Sortieroptionen",
-                "by_name": "Nach Name (alphabetisch)",
-                "by_size": "Nach Größe",
-                "by_date": "Nach Änderungsdatum",
-                "by_type": "Nach Typ",
-                "sort_order_set": "Sortierreihenfolge festgelegt auf",
-                "current_settings": "Aktuelle Einstellungen",
-                "language": "Sprache",
-                "theme": "Design",
-                "reset_confirm": "Sind Sie sicher, dass Sie alle Einstellungen auf die Standardwerte zurücksetzen möchten?",
-                "settings_reset": "Einstellungen erfolgreich auf Standardwerte zurückgesetzt",
-                "settings_reset_cancelled": "Einstellungsrücksetzung abgebrochen",
-                "yes": "Ja",
-                "no": "Nein",
-                "filter_menu": "Filter-Menü",
-                "filter_options": "Filter-Optionen",
-                "show_files_only": "Nur Dateien Anzeigen",
-                "show_folders_only": "Nur Ordner Anzeigen",
-                "show_text_files": "Textdateien Anzeigen",
-                "show_images": "Bilder Anzeigen",
-                "show_archives": "Archive Anzeigen",
-                "show_executables": "Ausführbare Dateien Anzeigen",
-                "custom_filter": "Benutzerdefinierter Filter",
-                "clear_filter": "Filter Löschen",
-                "back_to_navigation": "Zurück zur Navigation",
-                "enter_custom_pattern": "Benutzerdefiniertes Filtermuster eingeben",
-                "filter_applied": "Filter angewendet",
-                "filter_cleared": "Filter gelöscht"
-            },
-            "ja": {
-                "main_menu": "メインメニュー",
-                "navigation": "ナビゲーション",
-                "settings": "設定",
-                "exit": "終了",
-                "current_directory": "現在のディレクトリ",
-                "settings_menu": "設定メニュー",
-                "change_language": "言語を変更",
-                "display_preferences": "表示設定",
-                "view_current_settings": "現在の設定を表示",
-                "reset_to_defaults": "デフォルトにリセット",
-                "back_to_main_menu": "メインメニューに戻る",
-                "available_languages": "利用可能な言語",
-                "cancel": "キャンセル",
-                "language_changed": "言語が変更されました",
-                "language_change_cancelled": "言語変更がキャンセルされました",
-                "invalid_choice": "無効な選択",
-                "press_enter_continue": "続行するにはEnterを押してください",
-                "display_preferences_title": "表示設定",
-                "show_hidden_files": "隠しファイルを表示",
-                "sort_order": "並び順",
-                "back_to_settings": "設定に戻る",
-                "current_setting": "現在の設定",
-                "toggle": "切り替えますか？",
-                "sort_options": "並び順オプション",
-                "by_name": "名前順（アルファベット）",
-                "by_size": "サイズ順",
-                "by_date": "更新日時順",
-                "by_type": "種類順",
-                "sort_order_set": "並び順を設定しました",
-                "current_settings": "現在の設定",
-                "language": "言語",
-                "theme": "テーマ",
-                "reset_confirm": "すべての設定をデフォルトにリセットしてもよろしいですか？",
-                "settings_reset": "設定がデフォルトにリセットされました",
-                "settings_reset_cancelled": "設定リセットがキャンセルされました",
-                "yes": "はい",
-                "no": "いいえ",
-                "filter_menu": "フィルターメニュー",
-                "filter_options": "フィルターオプション",
-                "show_files_only": "ファイルのみ表示",
-                "show_folders_only": "フォルダーのみ表示",
-                "show_text_files": "テキストファイルを表示",
-                "show_images": "画像を表示",
-                "show_archives": "アーカイブを表示",
-                "show_executables": "実行ファイルを表示",
-                "custom_filter": "カスタムフィルター",
-                "clear_filter": "フィルターをクリア",
-                "back_to_navigation": "ナビゲーションに戻る",
-                "enter_custom_pattern": "カスタムフィルターパターンを入力",
-                "filter_applied": "フィルターが適用されました",
-                "filter_cleared": "フィルターがクリアされました"
-            },
-            "ru": {
-                "main_menu": "ГЛАВНОЕ МЕНЮ",
-                "navigation": "Навигация",
-                "settings": "Настройки",
-                "exit": "Выход",
-                "current_directory": "Текущая Папка",
-                "settings_menu": "Меню Настроек",
-                "change_language": "Изменить Язык",
-                "display_preferences": "Настройки Отображения",
-                "view_current_settings": "Просмотр Текущих Настроек",
-                "reset_to_defaults": "Сбросить к Значениям по Умолчанию",
-                "back_to_main_menu": "Вернуться в Главное Меню",
-                "available_languages": "Доступные Языки",
-                "cancel": "Отмена",
-                "language_changed": "Язык изменен на",
-                "language_change_cancelled": "Изменение языка отменено",
-                "invalid_choice": "Неверный выбор",
-                "press_enter_continue": "Нажмите Enter для продолжения",
-                "display_preferences_title": "Настройки Отображения",
-                "show_hidden_files": "Показать Скрытые Файлы",
-                "sort_order": "Порядок Сортировки",
-                "back_to_settings": "Вернуться к Настройкам",
-                "current_setting": "Текущая настройка",
-                "toggle": "Переключить?",
-                "sort_options": "Варианты Сортировки",
-                "by_name": "По Имени (алфавитный)",
-                "by_size": "По Размеру",
-                "by_date": "По Дате Изменения",
-                "by_type": "По Типу",
-                "sort_order_set": "Порядок сортировки установлен на",
-                "current_settings": "Текущие Настройки",
-                "language": "Язык",
-                "theme": "Тема",
-                "reset_confirm": "Вы уверены, что хотите сбросить все настройки к значениям по умолчанию?",
-                "settings_reset": "Настройки успешно сброшены к значениям по умолчанию",
-                "settings_reset_cancelled": "Сброс настроек отменен",
-                "yes": "Да",
-                "no": "Нет",
-                "filter_menu": "Меню Фильтров",
-                "filter_options": "Опции Фильтров",
-                "show_files_only": "Показать Только Файлы",
-                "show_folders_only": "Показать Только Папки",
-                "show_text_files": "Показать Текстовые Файлы",
-                "show_images": "Показать Изображения",
-                "show_archives": "Показать Архивы",
-                "show_executables": "Показать Исполняемые Файлы",
-                "custom_filter": "Пользовательский Фильтр",
-                "clear_filter": "Очистить Фильтр",
-                "back_to_navigation": "Вернуться к Навигации",
-                "enter_custom_pattern": "Введите пользовательский шаблон фильтра",
-                "filter_applied": "Фильтр применен",
-                "filter_cleared": "Фильтр очищен"
+                "controls_navigate": "↑↓ Naviguer",
+                "controls_select": "Entrée Sélectionner",
+                "controls_back": "Échap Retour",
+                "directory_is_empty": "Le répertoire est vide",
+                "permission_denied": "Permission refusée pour accéder à ce répertoire",
+                "access_denied": "Accès Refusé"
             }
         }
         
+
     def get_text(self, key):
         """Get translated text for current language"""
         return self.translations.get(self.current_language, {}).get(key, 
@@ -619,7 +322,7 @@ class FileManager:
     def load_language_settings(self):
         """Load language from settings file"""
         try:
-            with open('data.json', 'r') as f:
+            with open('file manager/data.json', 'r') as f:
                 import json
                 settings = json.load(f)
                 self.current_language = settings.get("language", "en")
@@ -628,14 +331,14 @@ class FileManager:
     def settings_menu(self):
         """Display and handle settings menu"""
         # Si data.json n'existe pas, creer avec les valeurs par defaut
-        if not os.path.exists('data.json'):
+        if not os.path.exists('file manager/data.json'):
             default_settings = {
                 "language": "en",
                 "theme": "default",
                 "show_hidden": False,
                 "sort_by": "name"
             }
-            with open('data.json', 'w') as f:
+            with open('file manager/data.json', 'w') as f:
                 import json
                 json.dump(default_settings, f, indent=4)
         
@@ -650,7 +353,7 @@ class FileManager:
             print(f"4. {self.get_text('reset_to_defaults')}")
             print(f"5. {self.get_text('back_to_main_menu')}")
             
-            choice = input(f"\n🎯 Choose an option (1-5): ").strip()
+            choice = input(f"\n🎯 {self.get_text('choose_option')} (1-5): ").strip()
             
             if choice == "1":
                 self.change_language()
@@ -672,7 +375,7 @@ class FileManager:
         
         # Load current settings
         try:
-            with open('data.json', 'r') as f:
+            with open('file manager/data.json', 'r') as f:
                 settings = json.load(f)
         except:
             settings = {"language": "en"}
@@ -710,7 +413,7 @@ class FileManager:
         print("30. עברית (he)")
         print(f"31. {self.get_text('cancel')}")
         
-        choice = input(f"\n🎯 Choose language (1-31): ").strip()
+        choice = input(f"\n🎯 {self.get_text('choose_language')} (1-31): ").strip()
         
         language_map = {
             "1": "en", "2": "fr", "3": "es", "4": "de", "5": "ja", "6": "ru",
@@ -725,7 +428,7 @@ class FileManager:
             settings["language"] = new_language
             
             try:
-                with open('data.json', 'w') as f:
+                with open('file manager/data.json', 'w') as f:
                     json.dump(settings, f, indent=4)
                 self.current_language = new_language  # Update current language
                 print(f"✅ {self.get_text('language_changed')} {new_language}")
@@ -743,7 +446,7 @@ class FileManager:
         import json
         
         try:
-            with open('data.json', 'r') as f:
+            with open('file manager/data.json', 'r') as f:
                 settings = json.load(f)
         except:
             settings = {"show_hidden": False, "sort_by": "name"}
@@ -757,7 +460,7 @@ class FileManager:
             print(f"2. {self.get_text('sort_order')}")
             print(f"3. {self.get_text('back_to_settings')}")
             
-            choice = input(f"\n🎯 Choose option (1-3): ").strip()
+            choice = input(f"\n🎯 {self.get_text('choose_option')} (1-3): ").strip()
             
             if choice == "1":
                 current = self.get_text("yes") if settings.get("show_hidden", False) else self.get_text("no")
@@ -774,7 +477,7 @@ class FileManager:
                 print(f"3. {self.get_text('by_date')}")
                 print(f"4. {self.get_text('by_type')}")
                 
-                sort_choice = input(f"\n🎯 Choose sort method (1-4): ").strip()
+                sort_choice = input(f"\n🎯 {self.get_text('choose_sort_method')} (1-4): ").strip()
                 sort_map = {
                     "1": "name",
                     "2": "size", 
@@ -794,7 +497,7 @@ class FileManager:
                 
             # Save settings after each change
             try:
-                with open('data.json', 'w') as f:
+                with open('file manager/data.json', 'w') as f:
                     json.dump(settings, f, indent=4)
             except Exception as e:
                 print(f"❌ Error saving settings: {e}")
@@ -806,7 +509,7 @@ class FileManager:
         import json
         
         try:
-            with open('data.json', 'r') as f:
+            with open('file manager/data.json', 'r') as f:
                 settings = json.load(f)
         except:
             settings = {}
@@ -860,7 +563,7 @@ class FileManager:
             }
             
             try:
-                with open('data.json', 'w') as f:
+                with open('file manager/data.json', 'w') as f:
                     import json
                     json.dump(default_settings, f, indent=4)
                 self.current_language = "en"  # Reset current language
@@ -871,42 +574,6 @@ class FileManager:
             print(f"❌ {self.get_text('settings_reset_cancelled')}")
             
         input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
-    def change_directory(self):
-        """Change to a different directory with interactive navigation"""
-        while True:
-            print("\n📂 Current directory contents:")
-            self.list_directory()
-            
-            print("\n📂 Navigation options:")
-            print("1. Enter directory name manually")
-            print("2. Select from numbered list")
-            print("3. Go to parent directory (..)")
-            print("4. Go to home directory (~)")
-            print("5. Go to root directory (/)")
-            print("6. Back to main menu")
-            
-            nav_choice = input("\n🎯 Choose navigation method (1-6): ").strip()
-            
-            if nav_choice == "1":
-                self.manual_directory_input()
-                break
-            elif nav_choice == "2":
-                self.select_directory_from_list()
-                break
-            elif nav_choice == "3":
-                self.go_to_parent_directory()
-                break
-            elif nav_choice == "4":
-                self.go_to_home_directory()
-                break
-            elif nav_choice == "5":
-                self.go_to_root_directory()
-                break
-            elif nav_choice == "6":
-                break
-            else:
-                print("❌ Invalid choice. Please enter 1-6.")
-                
     def manual_directory_input(self):
         """Manual directory input"""
         print("\n📂 Enter directory name (or '..' for parent directory):")
@@ -927,7 +594,7 @@ class FileManager:
             else:
                 print(f"❌ Directory '{choice}' does not exist.")
         except PermissionError:
-            print("🚫 Permission denied to access this directory.")
+            print(f"🚫 {self.get_text('permission_denied')}")
             
     def select_directory_from_list(self):
         """Select directory from numbered list"""
@@ -945,9 +612,9 @@ class FileManager:
                     modified = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
                     print(f"{i}. 📁 {directory.name:<40} {modified}")
                 except PermissionError:
-                    print(f"{i}. 📁 {directory.name:<40} 🚫 Access Denied")
+                    print(f"{i}. 📁 {directory.name:<40} 🚫 {self.get_text('access_denied')}")
                     
-            choice = int(input("\n🎯 Enter directory number (0 to cancel): "))
+            choice = int(input(f"\n🎯 {self.get_text('enter_directory_number')} ({self.get_text('cancel')}): "))
             
             if choice == 0:
                 return
@@ -957,7 +624,7 @@ class FileManager:
                     self.current_dir = selected_dir.resolve()
                     print(f"✅ Changed to: {self.current_dir}")
                 except PermissionError:
-                    print("🚫 Permission denied to access this directory.")
+                    print(f"🚫 {self.get_text('permission_denied')}")
             else:
                 print("❌ Invalid directory number.")
                 
@@ -996,54 +663,10 @@ class FileManager:
         except Exception as e:
             print(f"❌ Error accessing root directory: {e}")
             
-    def view_file_content(self):
-        """View content of a text file with enhanced navigation"""
-        while True:
-            print("\n📄 Current directory files:")
-            files = [item for item in self.current_dir.iterdir() if item.is_file()]
-            
-            if not files:
-                print("📭 No files in current directory.")
-                return
-                
-            # Display files with more details
-            print(f"{'#':<3} {'📄 Name':<42} {'Size':<12} {'Modified'}")
-            print("─" * 80)
-            
-            for i, file in enumerate(files, 1):
-                try:
-                    stat = file.stat()
-                    size = self.format_size(stat.st_size)
-                    modified = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
-                    file_emoji = self.get_file_emoji(file.suffix)
-                    print(f"{i:<3} {file_emoji} {file.name:<38} {size:<12} {modified}")
-                except PermissionError:
-                    file_emoji = self.get_file_emoji(file.suffix)
-                    print(f"{i:<3} {file_emoji} {file.name:<38} {'🚫 Access Denied':<12} {'🚫 Access Denied'}")
-            
-            print("\n👁️ File viewing options:")
-            print("1. View file by number")
-            print("2. Search files by name")
-            print("3. View only text files")
-            print("4. Back to main menu")
-            
-            view_choice = input("\n🎯 Choose option (1-4): ").strip()
-            
-            if view_choice == "1":
-                self.view_file_by_number(files)
-            elif view_choice == "2":
-                self.search_and_view_file(files)
-            elif view_choice == "3":
-                self.view_text_files_only(files)
-            elif view_choice == "4":
-                break
-            else:
-                print("❌ Invalid choice. Please enter 1-4.")
-                
     def view_file_by_number(self, files):
         """View file by entering its number"""
         try:
-            choice = int(input("\n👁️ Enter file number to view (0 to cancel): "))
+            choice = int(input(f"\n👁️ {self.get_text('enter_file_number')} ({self.get_text('cancel')}): "))
             if choice == 0:
                 return
             elif 1 <= choice <= len(files):
@@ -1058,7 +681,7 @@ class FileManager:
             
     def search_and_view_file(self, files):
         """Search for files by name and view them"""
-        search_term = input("\n🔍 Enter file name to search (partial match): ").strip().lower()
+        search_term = input(f"\n🔍 {self.get_text('enter_file_name_search')}: ").strip().lower()
         if not search_term:
             return
             
@@ -1074,7 +697,7 @@ class FileManager:
             print(f"{i}. {file_emoji} {file.name}")
             
         try:
-            choice = int(input("\n👁️ Enter file number to view (0 to cancel): "))
+            choice = int(input(f"\n👁️ {self.get_text('enter_file_number')} ({self.get_text('cancel')}): "))
             if choice == 0:
                 return
             elif 1 <= choice <= len(matching_files):
@@ -1102,7 +725,7 @@ class FileManager:
             print(f"{i}. {file_emoji} {file.name}")
             
         try:
-            choice = int(input("\n👁️ Enter file number to view (0 to cancel): "))
+            choice = int(input(f"\n👁️ {self.get_text('enter_file_number')} ({self.get_text('cancel')}): "))
             if choice == 0:
                 return
             elif 1 <= choice <= len(text_files):
@@ -1122,7 +745,11 @@ class FileManager:
             text_extensions = ['.txt', '.py', '.md', '.json', '.xml', '.html', '.css', '.js', '.ini', '.cfg', '.conf', '.log', '.csv', '.rtf', '.yml', '.yaml', '.toml', '.sql', '.sh', '.bat', '.ps1']
 
             if file_path.suffix.lower() in text_extensions:
-                self.open_editor(file_path)
+                # Special handling for Markdown files
+                if file_path.suffix.lower() == '.md':
+                    self.display_markdown_file(file_path)
+                else:
+                    self.open_editor(file_path)
             else:
                 print(f"⚠️ File '{file_path.name}' appears to be binary. Cannot display content.")
         except UnicodeDecodeError:
@@ -1131,11 +758,293 @@ class FileManager:
             print("🚫 Permission denied to read this file.")
         except Exception as e:
             print(f"❌ Error reading file: {e}")
+    
+    def display_markdown_file(self, file_path):
+        """Display Markdown file using Rich library for better terminal rendering"""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                markdown_content = f.read()
+            
+            if not markdown_content.strip():
+                print("📭 Markdown file is empty.")
+                input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
+                return
+            
+            # Use Rich library if available
+            if HAS_RICH:
+                self.display_markdown_with_rich(markdown_content, file_path.name)
+            else:
+                # Fallback to custom HTML conversion
+                html_content = self.convert_markdown_to_html(markdown_content)
+                self.display_html_content(html_content, file_path.name)
+            
+        except Exception as e:
+            print(f"❌ Error reading Markdown file: {e}")
+            # Fallback to regular editor
+            self.open_editor(file_path)
+    
+    def display_markdown_with_rich(self, markdown_content, filename):
+        """Display Markdown using Rich library for beautiful terminal rendering"""
+        console = Console()
+        
+        # Clear screen
+        self.clear_screen()
+        
+        # Display header
+        console.print("=" * 80, style="bold blue")
+        console.print(f"📄 {filename} - Markdown Viewer (Rich)", style="bold green")
+        console.print("=" * 80, style="bold blue")
+        console.print()
+        
+        # Create Markdown object
+        markdown = Markdown(markdown_content)
+        
+        # Display the markdown with Rich
+        console.print(markdown)
+        
+        console.print()
+        console.print("-" * 80, style="dim")
+        console.print("⌨️ Controls: Q Quit | E Edit Mode | Any key to continue", style="bold yellow")
+        
+        # Wait for user input
+        key = self.get_key()
+        
+        if key == 'E':
+            # Switch to edit mode
+            console.print("\n🔄 Switching to edit mode...", style="bold yellow")
+            input(f"⏸️ {self.get_text('press_enter_continue')}...")
+            return
+        elif key == 'Q' or key == 'ESCAPE':
+            return
+        else:
+            # Continue with any other key
+            input(f"⏸️ {self.get_text('press_enter_continue')}...")
+    
+    def convert_markdown_to_html(self, markdown_text):
+        """Convert Markdown text to HTML with enhanced formatting for console display"""
+        html = markdown_text
+        
+        # Headers with enhanced styling
+        html = re.sub(r'^### (.*?)$', r'<h3 style="color: #4CAF50; margin: 10px 0; font-weight: bold;">\1</h3>', html, flags=re.MULTILINE)
+        html = re.sub(r'^## (.*?)$', r'<h2 style="color: #2196F3; margin: 15px 0; font-weight: bold;">\1</h2>', html, flags=re.MULTILINE)
+        html = re.sub(r'^# (.*?)$', r'<h1 style="color: #FF9800; margin: 20px 0; font-weight: bold; text-transform: uppercase;">\1</h1>', html, flags=re.MULTILINE)
+        
+        # Bold and Italic with enhanced styling
+        html = re.sub(r'\*\*(.*?)\*\*', r'<strong style="color: #E91E63; font-weight: bold;">\1</strong>', html)
+        html = re.sub(r'\*(.*?)\*', r'<em style="color: #9C27B0; font-style: italic;">\1</em>', html)
+        
+        # Code blocks with enhanced styling
+        html = re.sub(r'```(.*?)```', r'<pre style="background: #f5f5f5; padding: 10px; border-left: 4px solid #4CAF50; margin: 10px 0; overflow-x: auto; font-family: monospace;"><code style="font-family: monospace;">\1</code></pre>', html, flags=re.DOTALL)
+        html = re.sub(r'`(.*?)`', r'<code style="background: #f0f0f0; padding: 2px 4px; border-radius: 3px; color: #D32F2F; font-family: monospace;">\1</code>', html)
+        
+        # Links with enhanced styling
+        html = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" style="color: #1976D2; text-decoration: underline;">\1</a>', html)
+        
+        # Lists with enhanced styling
+        html = re.sub(r'^\- (.*?)$', r'<li style="margin: 5px 0; color: #424242; list-style-type: disc;">\1</li>', html, flags=re.MULTILINE)
+        html = re.sub(r'^(\d+)\. (.*?)$', r'<li style="margin: 5px 0; color: #424242; list-style-type: decimal;">\2</li>', html, flags=re.MULTILINE)
+        
+        # Blockquotes with enhanced styling
+        html = re.sub(r'^> (.*?)$', r'<blockquote style="border-left: 4px solid #FFC107; padding-left: 15px; margin: 10px 0; color: #666; font-style: italic; background: #f9f9f9;">\1</blockquote>', html, flags=re.MULTILINE)
+        
+        # Horizontal rules with enhanced styling
+        html = re.sub(r'^---$', r'<hr style="border: none; border-top: 2px solid #E0E0E0; margin: 20px 0;">', html, flags=re.MULTILINE)
+        
+        # Tables (basic support)
+        html = re.sub(r'^\|(.+)\|$', r'<table style="border-collapse: collapse; width: 100%;"><tr style="border-bottom: 1px solid #ddd;">\1</tr></table>', html, flags=re.MULTILINE)
+        
+        # Convert line breaks to <br>
+        html = html.replace('\n', '<br>\n')
+        
+        # Wrap in HTML structure
+        html = f"""
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 100%;">
+            {html}
+        </div>
+        """
+        
+        return html
+    
+    def display_html_content(self, html_content, filename):
+        """Display HTML content in a formatted way"""
+        self.clear_screen()
+        
+        print("=" * 80)
+        print(f"📄 {filename} - Markdown Preview")
+        print("=" * 80)
+        print()
+        
+        # Process HTML content to extract formatted lines
+        formatted_lines = self.process_html_to_lines(html_content)
+        current_line = 0
+        total_lines = len(formatted_lines)
+        
+        while current_line < total_lines:
+            # Display current page
+            for i in range(current_line, min(current_line + 20, total_lines)):
+                line = formatted_lines[i]
+                if line.strip():
+                    print(line)
+                else:
+                    print()
+            
+            print()
+            print("-" * 80)
+            print(f"📄 Line {current_line + 1}-{min(current_line + 20, total_lines)} of {total_lines}")
+            print("⌨️ Controls: ↑↓ Navigate | Q Quit | E Edit Mode")
+            
+            # Get user input
+            key = self.get_key()
+            
+            if key == 'UP':
+                current_line = max(0, current_line - 1)
+            elif key == 'DOWN':
+                current_line = min(total_lines - 20, current_line + 1)
+            elif key == 'PAGE_UP':
+                current_line = max(0, current_line - 20)
+            elif key == 'PAGE_DOWN':
+                current_line = min(total_lines - 20, current_line + 20)
+            elif key == 'Q' or key == 'ESCAPE':
+                break
+            elif key == 'E':
+                # Switch to edit mode
+                print("\n🔄 Switching to edit mode...")
+                input(f"⏸️ {self.get_text('press_enter_continue')}...")
+                return
+            
+            self.clear_screen()
+    
+    def process_html_to_lines(self, html_content):
+        """Process HTML content and convert to formatted lines"""
+        import re
+        
+        lines = []
+        
+        # Split by <br> tags first
+        html_lines = html_content.split('<br>')
+        
+        for html_line in html_lines:
+            html_line = html_line.strip()
+            if not html_line:
+                lines.append("")
+                continue
+            
+            # Process different HTML elements
+            if '<h1' in html_line:
+                # H1 title
+                text = re.sub(r'<[^>]+>', '', html_line)
+                lines.append(f"╔══════════════════════════════════════════════════════════════════════════════╗")
+                lines.append(f"║ {text.upper():^78} ║")
+                lines.append(f"╚══════════════════════════════════════════════════════════════════════════════╝")
+                
+            elif '<h2' in html_line:
+                # H2 title
+                text = re.sub(r'<[^>]+>', '', html_line)
+                lines.append(f"┌──────────────────────────────────────────────────────────────────────────────┐")
+                lines.append(f"│ {text:^78} │")
+                lines.append(f"└──────────────────────────────────────────────────────────────────────────────┘")
+                
+            elif '<h3' in html_line:
+                # H3 title
+                text = re.sub(r'<[^>]+>', '', html_line)
+                lines.append(f"┌─ {text} {'─' * (75 - len(text))}┐")
+                
+            elif '<strong' in html_line:
+                # Bold text
+                text = re.sub(r'<[^>]+>', '', html_line)
+                lines.append(f"█ {text} █")
+                
+            elif '<em' in html_line:
+                # Italic text
+                text = re.sub(r'<[^>]+>', '', html_line)
+                lines.append(f"▸ {text} ◂")
+                
+            elif '<code' in html_line and '<pre' not in html_line:
+                # Inline code
+                text = re.sub(r'<[^>]+>', '', html_line)
+                lines.append(f"┌─ CODE ─┐")
+                lines.append(f"│ {text} │")
+                lines.append(f"└────────┘")
+                
+            elif '<pre' in html_line:
+                # Code block
+                text = re.sub(r'<[^>]+>', '', html_line)
+                lines.append(f"┌─ CODE BLOCK ─┐")
+                lines.append(f"│ {text} │")
+                lines.append(f"└──────────────┘")
+                
+            elif '<blockquote' in html_line:
+                # Blockquote
+                text = re.sub(r'<[^>]+>', '', html_line)
+                lines.append(f"┌─ QUOTE ─{'─' * (70 - len(text))}┐")
+                lines.append(f"│ {text} │")
+                lines.append(f"└{'─' * 78}┘")
+                
+            elif '<li' in html_line:
+                # List item
+                text = re.sub(r'<[^>]+>', '', html_line)
+                lines.append(f"├─ {text}")
+                
+            elif '<hr' in html_line:
+                # Horizontal rule
+                lines.append("─" * 80)
+                
+            else:
+                # Regular text
+                text = re.sub(r'<[^>]+>', '', html_line)
+                if text.strip():
+                    lines.append(text)
+                else:
+                    lines.append("")
+        
+        return lines
+    
+    def strip_html_tags(self, html_text):
+        """Strip HTML tags while preserving formatting with special characters and colors"""
+        import re
+        
+        # Store original HTML for pattern detection
+        original_html = html_text
+        
+        # Remove HTML tags but keep content
+        text = re.sub(r'<[^>]+>', '', html_text)
+        
+        # Add special characters and formatting based on HTML structure
+        if 'style=' in original_html:
+            if 'h1' in original_html:
+                # H1: Large title with special characters
+                text = f"╔══════════════════════════════════════════════════════════════════════════════╗\n║ {text.upper():^78} ║\n╚══════════════════════════════════════════════════════════════════════════════╝"
+            elif 'h2' in original_html:
+                # H2: Medium title with special characters
+                text = f"┌──────────────────────────────────────────────────────────────────────────────┐\n│ {text:^78} │\n└──────────────────────────────────────────────────────────────────────────────┘"
+            elif 'h3' in original_html:
+                # H3: Small title with special characters
+                text = f"┌─ {text} {'─' * (75 - len(text))}┐"
+            elif 'strong' in original_html or 'font-weight: bold' in original_html:
+                # Bold text with special characters
+                text = f"█ {text} █"
+            elif 'em' in original_html or 'font-style: italic' in original_html:
+                # Italic text with special characters
+                text = f"▸ {text} ◂"
+            elif 'code' in original_html:
+                # Code with special characters
+                text = f"┌─ CODE ─┐\n│ {text} │\n└────────┘"
+            elif 'blockquote' in original_html:
+                # Blockquote with special characters
+                text = f"┌─ QUOTE ─{'─' * (70 - len(text))}┐\n│ {text} │\n└{'─' * 78}┘"
+            elif 'li' in original_html:
+                # List item with special characters
+                text = f"├─ {text}"
+            elif 'hr' in original_html:
+                # Horizontal rule with special characters
+                text = "─" * 80
+        
+        return text
             
     def open_editor(self, file_path):
         """Open file in integrated editor"""
         try:
-            from editor import SimpleEditor
+            from file_manager.editor import SimpleEditor
             
             # Create editor with translations
             editor = SimpleEditor(file_path, self.translations.get(self.current_language, {}))
@@ -1161,7 +1070,7 @@ class FileManager:
             
         if not lines:
             print("📭 File is empty.")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
             return
             
         # Viewer state
@@ -1273,21 +1182,21 @@ class FileManager:
             print("═" * terminal_cols)
             if editing_line:
                 if editing_mode == "multi":
-                    controls_text = "⌨️ Editing: ←→ Move | ↑↓ Lines | Enter New Line | Insert/Delete | ESC Finish | Ctrl+S Save | Ctrl+D Discard"
+                    controls_text = f"⌨️ {self.get_text('controls_editing')}: {self.get_text('controls_move_cursor')} | {self.get_text('controls_lines')} | {self.get_text('controls_enter_new_line')} | {self.get_text('controls_insert_delete')} | {self.get_text('controls_finish')} | {self.get_text('controls_ctrl_s_save')} | {self.get_text('controls_ctrl_d_discard')}"
                 else:
-                    controls_text = "⌨️ Editing: ←→ Move | Insert/Delete | ESC Finish | Ctrl+S Save | Ctrl+D Discard"
+                    controls_text = f"⌨️ {self.get_text('controls_editing')}: {self.get_text('controls_move_cursor')} | {self.get_text('controls_insert_delete')} | {self.get_text('controls_finish')} | {self.get_text('controls_ctrl_s_save')} | {self.get_text('controls_ctrl_d_discard')}"
             elif edit_mode:
-                controls_text = "⌨️ Controls: ↑↓ Navigate | E Edit Line | M Multi-line | S Save | D Discard | / Search | R Resize | Q Quit"
+                controls_text = f"⌨️ Controls: {self.get_text('controls_navigate')} | {self.get_text('controls_edit_line')} | {self.get_text('controls_multi_line')} | {self.get_text('controls_save')} | {self.get_text('controls_discard')} | {self.get_text('controls_search')} | {self.get_text('controls_resize')} | {self.get_text('controls_quit')}"
             else:
-                controls_text = "⌨️ Controls: ↑↓ Navigate | E Edit Mode | / Search | N Next | P Prev | R Resize | Q Quit"
+                controls_text = f"⌨️ Controls: {self.get_text('controls_navigate')} | {self.get_text('controls_edit_mode')} | {self.get_text('controls_search')} | {self.get_text('controls_next')} | {self.get_text('controls_prev')} | {self.get_text('controls_resize')} | {self.get_text('controls_quit')}"
             
             if len(controls_text) > terminal_cols:
                 if editing_line:
-                    controls_text = "⌨️ Editing: ←→ Move | ESC Finish | Ctrl+S Save"
+                    controls_text = f"⌨️ {self.get_text('controls_editing')}: {self.get_text('controls_move_cursor')} | {self.get_text('controls_finish')} | {self.get_text('controls_ctrl_s_save')}"
                 elif edit_mode:
-                    controls_text = "⌨️ Controls: ↑↓ Navigate | E Edit | S Save | D Discard | Q Quit"
+                    controls_text = f"⌨️ Controls: {self.get_text('controls_navigate')} | {self.get_text('controls_edit')} | {self.get_text('controls_save')} | {self.get_text('controls_discard')} | {self.get_text('controls_quit')}"
                 else:
-                    controls_text = "⌨️ Controls: ↑↓ Navigate | E Edit | / Search | Q Quit"
+                    controls_text = f"⌨️ Controls: {self.get_text('controls_navigate')} | {self.get_text('controls_edit')} | {self.get_text('controls_search')} | {self.get_text('controls_quit')}"
             print(controls_text)
             
             # Handle key input
@@ -1391,7 +1300,7 @@ class FileManager:
                 
     def search_in_file(self, lines, current_line):
         """Search for text in file and return search results"""
-        search_term = input("\n🔍 Enter search term: ").strip()
+        search_term = input(f"\n🔍 {self.get_text('enter_search_term')}: ").strip()
         if not search_term:
             return [], 0, ""
             
@@ -1428,7 +1337,7 @@ class FileManager:
             print(f"\n📋 Line {line_index + 1} Details:")
             print(f"Length: {len(line)} characters")
             print(f"Content: {repr(line)}")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
             
     def edit_line(self, lines, modified_lines, line_index):
         """Edit a specific line"""
@@ -1436,15 +1345,15 @@ class FileManager:
             current_content = modified_lines.get(line_index, lines[line_index]).rstrip('\n\r')
             print(f"\n✏️ {self.get_text('enter_new_content')} {line_index + 1}:")
             print(f"Current: {current_content}")
-            new_content = input("New: ").strip()
+            new_content = input(f"{self.get_text('enter_new_content')}: ").strip()
             
             if new_content != current_content:
                 modified_lines[line_index] = new_content + '\n'
                 print(f"✅ Line {line_index + 1} modified")
             else:
-                print("ℹ️ No changes made")
+                print(f"ℹ️ {self.get_text('no_changes_made')}")
                 
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
             
     def save_file_changes(self, file_path, original_lines, modified_lines):
         """Save changes to file"""
@@ -1465,11 +1374,11 @@ class FileManager:
             
             print(f"✅ {self.get_text('changes_saved')}")
             print(f"📁 Backup created: {backup_path.name}")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
             
         except Exception as e:
             print(f"❌ Error saving file: {e}")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
             
     def handle_editing_input(self, key, lines, modified_lines, line_index, cursor_pos, insert_mode):
         """Handle input during inline editing"""
@@ -1594,192 +1503,6 @@ class FileManager:
             modified_lines[line_index] = new_content + '\n'
             self.cursor_position += 1
             
-    def copy_item(self):
-        """Copy a file or directory"""
-        print("\nCurrent directory contents:")
-        self.list_directory()
-        
-        source = input("\n📋 Enter source file/folder name: ").strip()
-        if not source:
-            return
-            
-        source_path = self.current_dir / source
-        if not source_path.exists():
-            print(f"❌ '{source}' does not exist.")
-            return
-            
-        destination = input("📂 Enter destination path: ").strip()
-        if not destination:
-            return
-            
-        destination_path = Path(destination)
-        
-        try:
-            if source_path.is_file():
-                shutil.copy2(source_path, destination_path)
-                print(f"✅ File copied successfully to {destination_path}")
-            elif source_path.is_dir():
-                shutil.copytree(source_path, destination_path)
-                print(f"✅ Directory copied successfully to {destination_path}")
-        except Exception as e:
-            print(f"❌ Error copying: {e}")
-            
-    def move_item(self):
-        """Move/rename a file or directory"""
-        print("\nCurrent directory contents:")
-        self.list_directory()
-        
-        source = input("\n✂️ Enter source file/folder name: ").strip()
-        if not source:
-            return
-            
-        source_path = self.current_dir / source
-        if not source_path.exists():
-            print(f"❌ '{source}' does not exist.")
-            return
-            
-        destination = input("📂 Enter destination path: ").strip()
-        if not destination:
-            return
-            
-        destination_path = Path(destination)
-        
-        # Confirmation for move operation
-        confirm = input(f"⚠️ Move '{source}' to '{destination}'? (y/N): ").strip().lower()
-        if confirm != 'y':
-            print("❌ Operation cancelled.")
-            return
-            
-        try:
-            shutil.move(str(source_path), str(destination_path))
-            print(f"✅ Item moved successfully to {destination_path}")
-        except Exception as e:
-            print(f"❌ Error moving: {e}")
-            
-    def delete_item(self):
-        """Delete a file or directory"""
-        print("\nCurrent directory contents:")
-        self.list_directory()
-        
-        item_name = input("\n🗑️ Enter file/folder name to delete: ").strip()
-        if not item_name:
-            return
-            
-        item_path = self.current_dir / item_name
-        if not item_path.exists():
-            print(f"❌ '{item_name}' does not exist.")
-            return
-            
-        # Confirmation for delete operation
-        confirm = input(f"⚠️ Are you sure you want to delete '{item_name}'? (y/N): ").strip().lower()
-        if confirm != 'y':
-            print("❌ Operation cancelled.")
-            return
-            
-        try:
-            if item_path.is_file():
-                item_path.unlink()
-                print(f"✅ File '{item_name}' deleted successfully.")
-            elif item_path.is_dir():
-                shutil.rmtree(item_path)
-                print(f"✅ Directory '{item_name}' deleted successfully.")
-        except Exception as e:
-            print(f"❌ Error deleting: {e}")
-            
-    def rename_item(self):
-        """Rename a file or directory"""
-        print("\nCurrent directory contents:")
-        self.list_directory()
-        
-        old_name = input("\n✏️ Enter current file/folder name: ").strip()
-        if not old_name:
-            return
-            
-        old_path = self.current_dir / old_name
-        if not old_path.exists():
-            print(f"❌ '{old_name}' does not exist.")
-            return
-            
-        new_name = input("✏️ Enter new name: ").strip()
-        if not new_name:
-            return
-            
-        new_path = self.current_dir / new_name
-        
-        try:
-            old_path.rename(new_path)
-            print(f"✅ '{old_name}' renamed to '{new_name}' successfully.")
-        except Exception as e:
-            print(f"❌ Error renaming: {e}")
-            
-    def create_file(self):
-        """Create a new file"""
-        filename = input("\n📄 Enter new file name: ").strip()
-        if not filename:
-            return
-            
-        file_path = self.current_dir / filename
-        
-        if file_path.exists():
-            print(f"⚠️ File '{filename}' already exists.")
-            return
-            
-        try:
-            file_path.touch()
-            print(f"✅ File '{filename}' created successfully.")
-        except Exception as e:
-            print(f"❌ Error creating file: {e}")
-            
-    def create_directory(self):
-        """Create a new directory"""
-        dirname = input("\n📁 Enter new directory name: ").strip()
-        if not dirname:
-            return
-            
-        dir_path = self.current_dir / dirname
-        
-        if dir_path.exists():
-            print(f"⚠️ Directory '{dirname}' already exists.")
-            return
-            
-        try:
-            dir_path.mkdir()
-            print(f"✅ Directory '{dirname}' created successfully.")
-        except Exception as e:
-            print(f"❌ Error creating directory: {e}")
-            
-    def quick_navigation(self):
-        """Quick navigation with file and folder selection"""
-        while True:
-            print("\n🚀 Quick Navigation")
-            print("Current directory contents:")
-            self.list_directory()
-            
-            print("\n🚀 Quick navigation options:")
-            print("1. Navigate to folder by number")
-            print("2. View file by number")
-            print("3. Go to parent directory")
-            print("4. Go to home directory")
-            print("5. Go to root directory")
-            print("6. Back to main menu")
-            
-            choice = input("\n🎯 Choose option (1-6): ").strip()
-            
-            if choice == "1":
-                self.quick_navigate_to_folder()
-            elif choice == "2":
-                self.quick_view_file()
-            elif choice == "3":
-                self.go_to_parent_directory()
-            elif choice == "4":
-                self.go_to_home_directory()
-            elif choice == "5":
-                self.go_to_root_directory()
-            elif choice == "6":
-                break
-            else:
-                print("❌ Invalid choice. Please enter 1-6.")
-                
     def quick_navigate_to_folder(self):
         """Quickly navigate to a folder by selecting its number"""
         try:
@@ -1796,9 +1519,9 @@ class FileManager:
                     modified = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
                     print(f"{i}. 📁 {directory.name:<40} {modified}")
                 except PermissionError:
-                    print(f"{i}. 📁 {directory.name:<40} 🚫 Access Denied")
+                    print(f"{i}. 📁 {directory.name:<40} 🚫 {self.get_text('access_denied')}")
                     
-            choice = int(input("\n🎯 Enter directory number (0 to cancel): "))
+            choice = int(input(f"\n🎯 {self.get_text('enter_directory_number')} ({self.get_text('cancel')}): "))
             
             if choice == 0:
                 return
@@ -1808,7 +1531,7 @@ class FileManager:
                     self.current_dir = selected_dir.resolve()
                     print(f"✅ Changed to: {self.current_dir}")
                 except PermissionError:
-                    print("🚫 Permission denied to access this directory.")
+                    print(f"🚫 {self.get_text('permission_denied')}")
             else:
                 print("❌ Invalid directory number.")
                 
@@ -1835,9 +1558,9 @@ class FileManager:
                     print(f"{i}. {file_emoji} {file.name:<40} {size}")
                 except PermissionError:
                     file_emoji = self.get_file_emoji(file.suffix)
-                    print(f"{i}. {file_emoji} {file.name:<40} 🚫 Access Denied")
+                    print(f"{i}. {file_emoji} {file.name:<40} 🚫 {self.get_text('access_denied')}")
                     
-            choice = int(input("\n👁️ Enter file number to view (0 to cancel): "))
+            choice = int(input(f"\n👁️ {self.get_text('enter_file_number')} ({self.get_text('cancel')}): "))
             
             if choice == 0:
                 return
@@ -1901,13 +1624,13 @@ class FileManager:
                         filter_display = self.get_filter_display_name()
                         print(f"📭 No items match filter: {filter_display}")
                     else:
-                        print("📭 Directory is empty.")
+                        print(f"📭 {self.get_text('directory_is_empty')}")
                     
                     # Fill remaining space
                     for _ in range(available_lines - 1):
                         print()
                     
-                    print("⌨️ Controls: ↑↓ Navigate | Enter Select | ESC Back | H Home | R Root | P Parent | F Filter")
+                    print(f"⌨️ Controls: {self.get_text('controls_navigate')} | {self.get_text('controls_select')} | {self.get_text('controls_back')} | {self.get_text('controls_home')} | {self.get_text('controls_root')} | {self.get_text('controls_parent')} | {self.get_text('controls_filter')}")
                     key = self.get_key()
                     if key == 'ESCAPE':
                         self.menu_mode = False
@@ -1958,7 +1681,7 @@ class FileManager:
                             print(f"{prefix}{item.name:<40} {'[FILE]':<10} {size:<15} {modified}")
                     except PermissionError:
                         prefix = "▶️ " if i == self.selected_index else "📄 "
-                        print(f"{prefix}{item.name:<40} {'[FILE]':<10} {'🚫 Access Denied':<15} {'🚫 Access Denied'}")
+                        print(f"{prefix}{item.name:<40} {'[FILE]':<10} {'🚫 ' + self.get_text('access_denied'):<15} {'🚫 ' + self.get_text('access_denied')}")
                     
                     items_displayed += 1
                 
@@ -1972,13 +1695,13 @@ class FileManager:
                 terminal_rows, terminal_cols = self.get_terminal_size()
                 available_lines = terminal_rows - 4  # Reserve space for message and controls
                 
-                print("🚫 Permission denied to access this directory.")
+                print(f"🚫 {self.get_text('permission_denied')}")
                 
                 # Fill remaining space
                 for _ in range(available_lines - 1):
                     print()
                 
-                print("⌨️ Controls: ESC Back | H Home | R Root | P Parent | F Filter")
+                print(f"⌨️ Controls: {self.get_text('controls_back')} | {self.get_text('controls_home')} | {self.get_text('controls_root')} | {self.get_text('controls_parent')} | {self.get_text('controls_filter')}")
                 key = self.get_key()
                 if key == 'ESCAPE':
                     self.menu_mode = False
@@ -1988,16 +1711,16 @@ class FileManager:
             print("\n⌨️ Controls:")
             if self.filter_active:
                 filter_display = self.get_filter_display_name()
-                controls_text = f"↑↓ Navigate | Enter Select | ESC Back | H Home | V View | D Delete | C Copy | M Move | R Rename | N New File | G New Folder | 🔍 Filter: {filter_display} (F to change)"
+                controls_text = f"{self.get_text('controls_navigate')} | {self.get_text('controls_select')} | {self.get_text('controls_back')} | {self.get_text('controls_home')} | {self.get_text('controls_view')} | {self.get_text('controls_delete')} | {self.get_text('controls_copy')} | {self.get_text('controls_move')} | {self.get_text('controls_rename')} | {self.get_text('controls_new_file')} | {self.get_text('controls_new_folder')} | 🔍 {self.get_text('controls_filter_active').format(filter_name=filter_display)}"
             else:
-                controls_text = "↑↓ Navigate | Enter Select | ESC Back | H Home | V View | D Delete | C Copy | M Move | R Rename | N New File | G New Folder | F Filter"
+                controls_text = f"{self.get_text('controls_navigate')} | {self.get_text('controls_select')} | {self.get_text('controls_back')} | {self.get_text('controls_home')} | {self.get_text('controls_view')} | {self.get_text('controls_delete')} | {self.get_text('controls_copy')} | {self.get_text('controls_move')} | {self.get_text('controls_rename')} | {self.get_text('controls_new_file')} | {self.get_text('controls_new_folder')} | {self.get_text('controls_filter')}"
             
             # Truncate controls if too long for terminal
             if len(controls_text) > terminal_cols:
                 if self.filter_active:
-                    controls_text = f"↑↓ Navigate | Enter Select | ESC Back | V View | 🔍 Filter: {filter_display} (F to change)"
+                    controls_text = f"{self.get_text('controls_navigate')} | {self.get_text('controls_select')} | {self.get_text('controls_back')} | {self.get_text('controls_view')} | 🔍 {self.get_text('controls_filter_active').format(filter_name=filter_display)}"
                 else:
-                    controls_text = "↑↓ Navigate | Enter Select | ESC Back | V View | F Filter"
+                    controls_text = f"{self.get_text('controls_navigate')} | {self.get_text('controls_select')} | {self.get_text('controls_back')} | {self.get_text('controls_view')} | {self.get_text('controls_filter')}"
             print(controls_text)
             
             # Handle key input
@@ -2044,6 +1767,9 @@ class FileManager:
                 self.show_filter_menu()
             elif key == 'G':
                 self.create_directory_interactive()
+            elif key == 'S':
+                # Open settings from navigation (quick access)
+                self.settings_menu()
                     
     def handle_item_selection(self):
         """Handle selection of an item"""
@@ -2063,7 +1789,7 @@ class FileManager:
                 self.selected_index = 0
                 print(f"✅ Changed to: {self.current_dir}")
             except PermissionError:
-                print("🚫 Permission denied to access this directory.")
+                print(f"🚫 {self.get_text('permission_denied')}")
         else:
             # For files, show options
             self.show_file_options(selected_item)
@@ -2083,15 +1809,15 @@ class FileManager:
                 print(f"📊 Size: {size}")
                 print(f"📅 Modified: {modified}")
             except PermissionError:
-                print("🚫 Access denied to file information")
+                print(f"🚫 {self.get_text('access_denied_to_file')}")
                 
             print("\n🎯 File Options:")
-            print("V - View content")
-            print("C - Copy file")
-            print("M - Move file")
-            print("R - Rename file")
-            print("D - Delete file")
-            print("ESC - Back to navigation")
+            print(f"V - {self.get_text('view_content')}")
+            print(f"C - {self.get_text('copy_file')}")
+            print(f"M - {self.get_text('move_file')}")
+            print(f"R - {self.get_text('rename_file')}")
+            print(f"D - {self.get_text('delete_file')}")
+            print(f"ESC - {self.get_text('back_to_navigation')}")
             
             key = self.get_key()
             
@@ -2124,10 +1850,10 @@ class FileManager:
             elif item_path.is_dir():
                 shutil.copytree(item_path, destination_path)
                 print(f"✅ Directory copied successfully to {destination_path}")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
         except Exception as e:
             print(f"❌ Error copying: {e}")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
             
     def move_selected_item(self, item_path):
         """Move a selected item"""
@@ -2145,10 +1871,10 @@ class FileManager:
         try:
             shutil.move(str(item_path), str(destination_path))
             print(f"✅ Item moved successfully to {destination_path}")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
         except Exception as e:
             print(f"❌ Error moving: {e}")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
             
     def rename_selected_item(self, item_path):
         """Rename a selected item"""
@@ -2161,10 +1887,10 @@ class FileManager:
         try:
             item_path.rename(new_path)
             print(f"✅ '{item_path.name}' renamed to '{new_name}' successfully.")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
         except Exception as e:
             print(f"❌ Error renaming: {e}")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
             
     def delete_selected_item(self, item_path):
         """Delete a selected item"""
@@ -2180,10 +1906,10 @@ class FileManager:
             elif item_path.is_dir():
                 shutil.rmtree(item_path)
                 print(f"✅ Directory '{item_path.name}' deleted successfully.")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
         except Exception as e:
             print(f"❌ Error deleting: {e}")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
             
     def create_file_interactive(self):
         """Create a new file interactively"""
@@ -2195,16 +1921,16 @@ class FileManager:
         
         if file_path.exists():
             print(f"⚠️ File '{filename}' already exists.")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
             return
             
         try:
             file_path.touch()
             print(f"✅ File '{filename}' created successfully.")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
         except Exception as e:
             print(f"❌ Error creating file: {e}")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
             
     def create_directory_interactive(self):
         """Create a new directory interactively"""
@@ -2216,16 +1942,16 @@ class FileManager:
         
         if dir_path.exists():
             print(f"⚠️ Directory '{dirname}' already exists.")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
             return
             
         try:
             dir_path.mkdir()
             print(f"✅ Directory '{dirname}' created successfully.")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
         except Exception as e:
             print(f"❌ Error creating directory: {e}")
-            input("\n⏸️ Press Enter to continue...")
+            input(f"\n⏸️ {self.get_text('press_enter_continue')}...")
             
     def filter_items(self, items, pattern):
         """Filter items based on pattern"""
@@ -2393,54 +2119,20 @@ class FileManager:
         
         return filter_names.get(self.filter_pattern, f"'{self.filter_pattern}'")
             
-    def display_menu(self):
-        """Display the main menu"""
-        self.load_language_settings()  # Load current language
-        terminal_rows, terminal_cols = self.get_terminal_size()
-        
-        print(f"                    🎯 {self.get_text('main_menu')} 🎯")
-        print("═" * terminal_cols)
-        print(f"1. 🚀 {self.get_text('navigation')}")
-        print(f"2. ⚙️ {self.get_text('settings')}")
-        print(f"3. 🚪 {self.get_text('exit')}")
-        
-        # Fill remaining space to push input to bottom
-        available_lines = terminal_rows - 10  # Reserve space for logo, path, menu, and input
-        for _ in range(available_lines):
-            print()
-        
-        print("═" * terminal_cols)
-        
     def run(self):
         """Main application loop"""
-        while self.running:
-            self.clear_screen()
-            self.display_logo()
-            self.display_current_path()
-            self.display_menu()
-            
-            try:
-                choice = input("\nEnter your choice (1-3): ").strip()
-                
-                if choice == "1":
-                    self.navigation()
-                elif choice == "2":
-                    self.settings_menu()
-                elif choice == "3":
-                    print("\n👋 Thank you for using KASER File Manager!")
-                    self.running = False
-                else:
-                    print("❌ Invalid choice. Please enter a number between 1-3.")
-                    
-                if self.running:
-                    input("\n⏸️ Press Enter to continue...")
-                    
-            except KeyboardInterrupt:
-                print("\n\n👋 Exiting...")
-                self.running = False
-            except Exception as e:
-                print(f"❌ An error occurred: {e}")
-                input("⏸️ Press Enter to continue...")
+        # Start the application directly in navigation mode so the tool
+        # can be used programmatically or as a CLI helper without a main menu.
+        try:
+            # Load language settings before starting
+            self.load_language_settings()
+            # Enter navigation mode. navigation() manages its own loop and
+            # will return when the user exits navigation (ESC in menu).
+            self.navigation()
+        except KeyboardInterrupt:
+            print("\n\n👋 Exiting...")
+        except Exception as e:
+            print(f"❌ An error occurred: {e}")
 
 
 def main():
@@ -2455,3 +2147,21 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# Programmatic entry point for importing as a module
+def start_tool(start_path: str = None):
+    """Start the FileManager programmatically.
+
+    Args:
+        start_path: Optional path to start in (defaults to current working directory).
+    """
+    fm = FileManager()
+    if start_path:
+        try:
+            p = Path(start_path)
+            if p.exists() and p.is_dir():
+                fm.current_dir = p.resolve()
+        except Exception:
+            pass
+    fm.run()

@@ -1,183 +1,212 @@
 # 📁 KASER File Manager
 
-A beautiful console-based file manager built in Python with a menu-driven interface and emoji-rich UI.
+Un gestionnaire de fichiers console élégant et moderne avec interface riche en emojis et support multilingue complet.
 
-## ✨ Features
+## ✨ Fonctionnalités
 
-- **📂 Navigation**: Browse directories and view current path with emoji indicators
-- **🔄 File Operations**: Copy, move, delete, and rename files and folders
-- **👁️ Content Viewing**: View text file contents directly in the console
-- **📄 File Management**: Create new files and directories
-- **🎯 User-Friendly**: Menu-driven interface with numbered options and emojis
-- **🌍 Cross-Platform**: Works on Windows, Linux, and macOS
-- **🛡️ Safe Operations**: Confirmation prompts for destructive operations
-- **🎨 Beautiful UI**: Emoji-rich interface for better visual experience
-- **📊 Smart File Icons**: Different emojis for different file types
+### 🎯 Navigation et Gestion
+- **Navigation interactive** avec les touches fléchées
+- **Recherche et filtres avancés** par type de fichier
+- **Visualisation de fichiers** avec support Markdown professionnel
+- **Éditeur de texte intégré** avec fonctionnalités avancées
+- **Opérations complètes** : copier, déplacer, supprimer, renommer, créer
 
-## Requirements
+### 🌍 Support Multilingue
+- **8 langues complètes** : Anglais, Français, Espagnol, Allemand, Japonais, Russe, Chinois, Arabe
+- **Traductions globales** via fichier JSON séparé
+- **Changement de langue** en temps réel
+- **Interface entièrement traduite** : menus, contrôles, messages
 
-- Python 3.6 or higher
-- Standard library modules (os, shutil, pathlib, datetime)
-- Optional: pyfiglet (for ASCII art logo)
+### 🎨 Interface Moderne
+- **Support Markdown** avec rendu professionnel (Rich library)
+- **Caractères spéciaux** pour l'affichage console
+- **Interface riche en emojis** pour une meilleure UX
+- **Couleurs et formatage** automatiques
+- **Navigation intuitive** avec contrôles clavier
 
-## Installation
+## 🚀 Installation
 
-1. Clone or download this repository
-2. Install optional dependencies (for logo):
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Prérequis
+- Python 3.7+
+- Bibliothèque Rich (optionnelle, pour le support Markdown avancé)
 
-## Usage
-
-Run the file manager:
+### Installation
 ```bash
-python file_manager.py
+# Cloner le projet
+git clone https://github.com/user/kaser.git
+cd kaser
+
+# Installer les dépendances
+pip install -r requirements.txt
+
+# Optionnel : Installer Rich pour le support Markdown avancé
+pip install rich
 ```
 
-### 🎯 Menu Options
+## 📖 Utilisation
 
-1. **⌨️ Interactive Navigation (Arrow Keys) - RECOMMENDED** - Complete file manager with keyboard navigation
-2. **📋 List directory contents** - View files and folders in current directory
-3. **📂 Change directory (Enhanced Navigation)** - Advanced navigation with multiple options
-4. **👁️ View file content (Enhanced)** - Advanced file viewing with search and filtering
-5. **🚀 Quick navigation** - Fast navigation by selecting numbered items
-6. **📋 Copy file/folder** - Copy items to another location
-7. **✂️ Move/rename file/folder** - Move or rename items
-8. **🗑️ Delete file/folder** - Remove items (with confirmation)
-9. **✏️ Rename file/folder** - Rename existing items
-10. **📄 Create new file** - Create empty text files
-11. **📁 Create new directory** - Create new folders
-12. **🚪 Exit** - Quit the application
+### Lancement Simple
+```bash
+cd tools
+python run_file_manager.py
+```
 
-### 🧭 Navigation Features
+### Lancement Direct
+```bash
+cd tools
+python -c "import sys; sys.path.append('file manager'); from file_manager import FileManager; FileManager().run()"
+```
 
-#### 📂 Enhanced Directory Navigation (Option 2)
-- **Manual input**: Type directory name or use `..` for parent
-- **Numbered selection**: Choose from a numbered list of directories
-- **Quick shortcuts**: Go to parent, home, or root directory
-- **Visual feedback**: See directory contents before navigating
+## ⌨️ Raccourcis Clavier
 
-#### 👁️ Enhanced File Viewing (Option 3)
-- **Numbered selection**: Choose files from a detailed list
-- **Search functionality**: Find files by partial name matching
-- **Text file filtering**: View only text files (Python, HTML, CSS, etc.)
-- **Detailed information**: File size, modification date, and type icons
+### Navigation Interactive
+| Touche | Action |
+|--------|--------|
+| `↑↓` | Naviguer dans la liste |
+| `Enter` | Sélectionner/Entrer dans un dossier |
+| `ESC` | Retour au menu principal |
+| `H` | Aller au répertoire home |
+| `V` | Voir le contenu d'un fichier |
+| `C` | Copier un élément |
+| `M` | Déplacer un élément |
+| `D` | Supprimer un élément |
+| `R` | Renommer un élément |
+| `N` | Créer un nouveau fichier |
+| `G` | Créer un nouveau dossier |
+| `F` | Activer/désactiver les filtres |
 
-#### 🚀 Quick Navigation (Option 4)
-- **Instant folder access**: Navigate to folders by number
-- **Quick file viewing**: View files by selecting their number
-- **Rapid shortcuts**: Fast access to parent, home, and root directories
-- **Streamlined interface**: Minimal steps for common operations
+### Visualisation Markdown
+| Touche | Action |
+|--------|--------|
+| `Q` / `ESC` | Quitter la visualisation |
+| `E` | Passer en mode édition |
 
-#### ⌨️ Interactive Navigation (Option 1) - RECOMMENDED!
-- **Complete file manager**: All operations available with keyboard navigation
-- **Arrow key navigation**: Use ↑↓ to navigate through files and folders
-- **Visual selection**: Selected item highlighted with ▶️ indicator
-- **Special navigation items**:
-  - **⬆️ .. (Parent Directory)** - Navigate to parent directory
-  - **🏠 ... (Root Directory)** - Navigate to root directory
-- **Keyboard shortcuts**:
-  - **↑↓** Navigate up/down through items
-  - **Enter** Select folder (enter) or show file options
-  - **ESC** Back to main menu
-  - **H** Go to home directory
-  - **V** View selected file content
-  - **D** Delete selected item
-  - **C** Copy selected item
-  - **M** Move selected item
-  - **R** Rename selected item
-  - **N** Create new file
-  - **F** Create new folder
-- **File operations menu**: When selecting a file, get options for:
-  - **V** View content
-  - **C** Copy file
-  - **M** Move file
-  - **R** Rename file
-  - **D** Delete file
-  - **ESC** Back to navigation
-- **Cross-platform**: Works on Windows, Linux, and macOS
-- **No command line needed**: All operations available through keyboard shortcuts
+## 🌍 Langues Supportées
 
-#### 🧭 General Navigation Tips
-- Use `..` to go to parent directory
-- Enter full paths for absolute navigation
-- Use relative paths for local navigation
-- Press Enter to continue after each operation
-- Use numbered lists for faster selection
+| Code | Langue | Exemple |
+|------|--------|---------|
+| `en` | English | "Back to main menu" |
+| `fr` | Français | "Retour" |
+| `es` | Español | "Volver al menú principal" |
+| `de` | Deutsch | "Zurück zum Hauptmenü" |
+| `ja` | 日本語 | "メインメニューに戻る" |
+| `ru` | Русский | "Вернуться в главное меню" |
+| `zh` | 中文 | "返回主菜单" |
+| `ar` | العربية | "العودة إلى القائمة الرئيسية" |
 
-### 🛡️ Safety Features
+## 📁 Structure du Projet
 
-- ⚠️ Confirmation prompts for delete and move operations
-- 🚫 Permission error handling with clear messages
-- ✅ Input validation and error feedback
-- 🔄 Graceful error handling with emoji indicators
+```
+kaser/
+├── tools/
+│   ├── file manager/           # Package principal
+│   │   ├── file_manager.py    # Code principal
+│   │   ├── editor.py          # Éditeur de texte
+│   │   ├── translations.json  # Traductions globales
+│   │   ├── data.json         # Configuration
+│   │   └── __init__.py       # Package Python
+│   ├── run_file_manager.py   # Script de lancement
+│   └── README.md             # Documentation
+├── requirements.txt          # Dépendances
+└── CHANGELOG.md             # Historique des versions
+```
 
-## 📄 File Types Supported for Viewing
+## ⚙️ Configuration
 
-The file manager can display content for common text file types:
-- 📝 `.txt` - Text files
-- 🐍 `.py` - Python files
-- 📖 `.md` - Markdown files
-- 📋 `.json` - JSON files
-- 📄 `.xml` - XML files
-- 🌐 `.html` - HTML files
-- 🎨 `.css` - CSS files
-- 🟨 `.js` - JavaScript files
+### Fichier de Configuration (`tools/file manager/data.json`)
+```json
+{
+    "language": "fr",
+    "theme": "default",
+    "show_hidden": false,
+    "sort_by": "name"
+}
+```
 
-## 🎨 Emoji File Type Icons
+### Changer la Langue
+1. **Via l'application** : Paramètres → Changer la langue
+2. **Via le fichier** : Modifier `"language"` dans `data.json`
 
-The file manager displays different emojis for different file types:
-- 🐍 Python files (.py)
-- 🟨 JavaScript files (.js)
-- 🌐 HTML files (.html)
-- 🎨 CSS files (.css)
-- 📋 JSON files (.json)
-- 📖 Markdown files (.md)
-- 🖼️ Image files (.jpg, .png, .gif, etc.)
-- 🎵 Audio files (.mp3, .wav, .flac)
-- 🎬 Video files (.mp4, .avi, .mov)
-- 🗜️ Archive files (.zip, .rar, .7z)
-- ⚙️ Executable files (.exe, .msi)
-- 📊 Spreadsheet files (.xls, .xlsx)
-- 📽️ Presentation files (.ppt, .pptx)
-- And many more!
+## 📄 Types de Fichiers Supportés
 
-## 🚫 Error Handling
+### Visualisation Directe
+- 📝 `.txt` - Fichiers texte
+- 🐍 `.py` - Fichiers Python
+- 📖 `.md` - Fichiers Markdown (avec rendu Rich)
+- 📋 `.json` - Fichiers JSON
+- 📄 `.xml` - Fichiers XML
+- 🌐 `.html` - Fichiers HTML
+- 🎨 `.css` - Fichiers CSS
+- 🟨 `.js` - Fichiers JavaScript
 
-The application handles common errors gracefully with emoji indicators:
-- 🚫 Permission denied errors
-- ❌ File not found errors
-- ❌ Invalid input errors
-- ⚠️ Unicode decode errors for binary files
+### Éditeur Intégré
+Tous les fichiers texte peuvent être édités avec l'éditeur intégré.
 
-## ⌨️ Keyboard Shortcuts
+## 🛡️ Gestion d'Erreurs
 
-### General Application
-- `Ctrl+C` - 🚪 Exit the application
-- `Enter` - ⏸️ Continue after operations
+- **Permissions** : Messages d'erreur clairs pour les accès refusés
+- **Fichiers binaires** : Détection automatique et avertissement
+- **Encodage** : Support UTF-8 avec fallback
+- **Fallbacks** : Système de secours pour toutes les fonctionnalités
 
-### Interactive Navigation Mode (Option 1) - RECOMMENDED
-- `↑↓` - Navigate through files and folders
-- `Enter` - Select folder or show file options
-- `ESC` - Back to main menu
-- `H` - Go to home directory
-- `V` - View selected file content
-- `D` - Delete selected item
-- `C` - Copy selected item
-- `M` - Move selected item
-- `R` - Rename selected item
-- `N` - Create new file
-- `F` - Create new folder
+## 🔧 Développement
 
-### File Operations Menu
-- `V` - View file content
-- `C` - Copy file
-- `M` - Move file
-- `R` - Rename file
-- `D` - Delete file
-- `ESC` - Back to navigation
+### Structure du Code
+- **Architecture modulaire** avec package Python
+- **Séparation claire** : code, traductions, configuration
+- **Code optimisé** et maintenable
+- **Documentation complète** des fonctions
 
-## 📄 License
+### Ajout de Traductions
+1. Modifier `tools/file manager/translations.json`
+2. Ajouter les nouvelles clés dans toutes les langues
+3. Tester avec `python run_file_manager.py`
 
-This project is open source and available under the MIT License.
+## 📊 Statistiques
+
+- **2,022 lignes** de code Python
+- **53 fonctions** actives
+- **8 langues** complètes
+- **80+ clés** de traduction par langue
+- **Support Markdown** professionnel avec Rich
+
+## 🎯 Fonctionnalités Avancées
+
+### Support Markdown
+- **Rendu professionnel** avec la bibliothèque Rich
+- **Couleurs automatiques** et formatage
+- **Syntaxe highlighting** pour le code
+- **Fallback** vers caractères spéciaux si Rich indisponible
+
+### Système de Traduction
+- **Fichier JSON global** pour toutes les traductions
+- **Chargement dynamique** des langues
+- **Système de fallback** en cas d'erreur
+- **Maintenance facile** sans modification du code
+
+## 📝 Changelog
+
+Consultez l'historique complet des versions et améliorations dans le [CHANGELOG.md](CHANGELOG.md).
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! N'hésitez pas à :
+- Signaler des bugs
+- Proposer de nouvelles fonctionnalités
+- Ajouter des traductions
+- Améliorer la documentation
+
+## 📞 Support
+
+Pour toute question ou problème :
+- Ouvrir une issue sur GitHub
+- Consulter la documentation
+- Vérifier le changelog pour les dernières mises à jour
+
+---
+
+**Développé avec ❤️ en Python** - Interface moderne, fonctionnalités avancées, et expérience utilisateur optimale.

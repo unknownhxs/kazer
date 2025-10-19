@@ -1,2 +1,25 @@
-# Optional dependency for ASCII art logo
+# KASER File Manager - Dépendances
+
+# Bibliothèque pour l'affichage Markdown professionnel (optionnelle)
+rich>=13.0.0
+
+# Bibliothèque pour les logos ASCII (optionnelle)
 pyfiglet>=0.8.0
+
+# Dépendances système (incluses avec Python)
+# - os (système d'exploitation)
+# - shutil (opérations sur fichiers)
+# - sys (système)
+# - pathlib (chemins de fichiers)
+# - datetime (dates et heures)
+# - re (expressions régulières)
+# - json (format JSON)
+# - msvcrt (Windows - entrée clavier)
+# - termios (Unix/Linux - entrée clavier)
+# - tty (Unix/Linux - terminal)
+
+# Installation des dépendances optionnelles :
+# pip install rich pyfiglet
+
+# Installation minimale (fonctionne sans dépendances optionnelles) :
+# pip install -r requirements.txt

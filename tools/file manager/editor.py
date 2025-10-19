@@ -161,7 +161,7 @@ class SimpleEditor:
                 finally:
                     termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         except:
-            return input("Press Enter to continue...")
+            return input(f"{self.get_text('press_enter_continue')}...")
     
     def display_header(self):
         """Display editor header"""
@@ -225,9 +225,9 @@ class SimpleEditor:
     def display_footer(self):
         """Display editor footer with controls"""
         print("═" * self.terminal_cols)
-        controls = "⌨️ Controls: ↑↓ Navigate | ←→ Move | Enter New Line | Insert Toggle | F French Chars | Ctrl+S Save | ESC Quit"
+        controls = f"⌨️ Controls: {self.get_text('controls_navigate')} | {self.get_text('controls_move_cursor')} | {self.get_text('controls_enter_new_line')} | Insert Toggle | F French Chars | {self.get_text('controls_ctrl_s_save')} | {self.get_text('controls_quit')}"
         if len(controls) > self.terminal_cols:
-            controls = "⌨️ Controls: ↑↓ Navigate | ←→ Move | Enter New Line | F French | Ctrl+S Save | ESC Quit"
+            controls = f"⌨️ Controls: {self.get_text('controls_navigate')} | {self.get_text('controls_move_cursor')} | {self.get_text('controls_enter_new_line')} | F French | {self.get_text('controls_ctrl_s_save')} | {self.get_text('controls_quit')}"
         print(controls)
     
     def handle_input(self, key):
